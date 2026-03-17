@@ -25,17 +25,17 @@ Read plan → Extract all tasks with full text → Create TodoWrite → Record b
 
 For each task:
   1. Dispatch implementer subagent (worktree-isolated)
+     - Subagent loads /implement + appropriate language skill
+     - /implement runs TDD loop: tests → code → validate → /audit-code (4 agents) → repeat
+     - Loop continues until /audit-code returns clean
   2. Answer questions if asked
-  3. Implementer implements, tests, commits to worktree branch
-  4. Merge worktree branch back to feature branch
-  5. Dispatch spec compliance reviewer → pass? If no → fix subagent → re-review
-  6. Dispatch code quality reviewer → pass? If no → fix subagent → re-review
-  7. Mark task complete in TodoWrite
+  3. Merge worktree branch back to feature branch
+  4. Mark task complete in TodoWrite
 
 After all tasks:
-  8. Dispatch final code reviewer across entire implementation
-  9. Verify all tests pass
-  10. Present branch completion options
+  5. Dispatch /audit-code across entire implementation (cross-task integration audit)
+  6. Verify all tests pass
+  7. Present branch completion options
 ```
 
 ## Step 1: Load Plan and Establish Recovery State
@@ -55,6 +55,7 @@ After all tasks:
 - Full task text from plan (don't make subagent read plan file)
 - Scene-setting context (where this task fits in the project)
 - Clear goal and constraints
+- **Skill loading**: subagent MUST load `/implement` + the appropriate language skill from the dispatch table in `/programming`
 - **Explicit commit requirement**: subagent MUST commit before returning
 
 ```markdown
@@ -65,10 +66,13 @@ Context: [brief description of where this fits]
 [Full task text from plan, verbatim]
 
 Requirements:
-- Follow TDD: write failing test first, then implement
-- Run tests after each change
-- Commit when tests pass with message: "feat(task-N): [description]"
-- Return summary of what you built, any decisions made, and the commit SHA
+- Load /implement and follow its TDD loop
+- Load [language skill] for patterns and conventions
+- The /implement loop will dispatch /audit-code after each round
+- Loop continues until the auditor returns a clean report
+- Commit when audit passes with message: "feat(task-N): [description]"
+- Write implementation decisions to statement-mcp as handoff messages
+- Return summary of what you built, audit rounds needed, and the commit SHA
 ```
 
 **Worktree isolation:** Each implementer runs in its own worktree. This means:
@@ -80,45 +84,7 @@ Requirements:
 
 **If implementer asks questions:** Answer clearly and completely. Provide additional context. Don't rush them into implementation.
 
-**After merge, dispatch spec compliance reviewer:**
-
-```markdown
-Review this implementation against its spec.
-
-Spec:
-[task text from plan]
-
-Changes: git diff [base_sha]..[head_sha]
-
-Check:
-- All requirements implemented? Nothing missing?
-- Nothing extra added beyond spec?
-- Tests cover the specified behavior?
-
-Reply: Spec compliant, or list specific gaps.
-```
-
-**After spec passes, dispatch code quality reviewer:**
-
-```markdown
-Review code quality of recent changes.
-
-Changes: git diff [base_sha]..[head_sha]
-
-Check:
-- Code quality, patterns, error handling
-- Test quality (real code, not mock-heavy)
-- Naming, organization, maintainability
-- Security considerations
-
-Categorize issues as Critical / Important / Minor.
-```
-
-**Fix loop:** Reviewer finds issues → dispatch fix subagent (with worktree isolation) → fix subagent commits → merge back → reviewer re-reviews → repeat until approved.
-
-**Order matters:** Spec compliance MUST pass before starting code quality review.
-
-**After both reviews pass:** Mark task complete in TodoWrite immediately. This is the recovery signal — a new session seeing this task marked complete will skip it.
+**After merge:** Mark task complete in TodoWrite immediately. The `/implement` loop already ran `/audit-code` until clean — no additional review dispatch needed per task.
 
 ## Session Recovery
 
@@ -136,10 +102,12 @@ If the session is interrupted at any point, the next session can recover:
 
 ## Step 3: Branch Completion
 
-After all tasks complete and final reviewer approves:
+After all tasks complete:
 
-1. **Verify tests pass** — run full suite, read output, confirm zero failures
-2. **If tests fail** — fix before offering options, do not proceed
+1. **Cross-task integration audit** — dispatch `/audit-code` across the ENTIRE implementation (all tasks combined). This catches interaction effects between independently-implemented tasks that per-task audits couldn't see.
+2. **If audit finds issues** — dispatch fix subagent (worktree-isolated) → fix → re-audit until clean
+3. **Verify tests pass** — run full suite, read output, confirm zero failures
+4. **If tests fail** — fix before offering options, do not proceed
 
 Present exactly these options:
 
@@ -174,22 +142,22 @@ When receiving review feedback from any source:
 
 **Never:**
 - Start implementation on main/master without explicit user consent
-- Skip reviews (spec compliance OR code quality)
+- Skip the /implement audit loop (every task gets audited until clean)
+- Skip the cross-task integration audit after all tasks complete
 - Dispatch multiple implementation subagents in parallel (conflicts)
 - Make subagent read plan file (provide full text instead)
-- Skip re-review after fixes
-- Start quality review before spec compliance passes
 - Proceed with failing tests
 - Trust agent success reports without independent verification
 - Force-push without explicit request
-- Leave a task unmarked in TodoWrite after its work is merged and reviewed
+- Leave a task unmarked in TodoWrite after its work is merged
 - Let a subagent return without committing (uncommitted work = unrecoverable work)
+- Let a subagent skip loading /implement or the language skill
 
 **If subagent asks questions:** Answer before letting them proceed.
 
 **If subagent fails:** Dispatch fix subagent with specific instructions. Don't fix manually (context pollution). Use worktree isolation.
 
-**If reviewer finds issues:** Dispatch fix subagent (worktree-isolated) → fix subagent commits → merge back → reviewer re-reviews → repeat. Don't skip re-review.
+**If cross-task audit finds issues:** Dispatch fix subagent (worktree-isolated) → fix subagent commits → merge back → re-audit. Don't skip re-audit.
 
 **If session may be interrupted:** Every commit on the feature branch is a recovery checkpoint. TodoWrite state plus git log are sufficient to resume from any point.
 
