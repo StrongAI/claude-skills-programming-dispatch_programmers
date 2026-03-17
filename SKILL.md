@@ -1,7 +1,6 @@
 ---
 name: dispatching-programmers
 description: Use when you have an implementation plan to execute, dispatching subagents per task - triggers on plan execution, task dispatch, subagent workflow
-disable-model-invocation: true
 ---
 
 # Subagent-Driven Development
