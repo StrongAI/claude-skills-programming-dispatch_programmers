@@ -1,6 +1,7 @@
 ---
 name: dispatching-programmers
-description: Use when you have an implementation plan to execute, dispatching subagents per task - triggers on plan execution, task dispatch, subagent workflow
+user-invocable: false
+description: Internal skill invoked by /programming chain. Use when you have an implementation plan to execute, dispatching subagents per task - triggers on plan execution, task dispatch, subagent workflow
 ---
 
 # Subagent-Driven Development
