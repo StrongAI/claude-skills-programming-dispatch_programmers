@@ -41,14 +41,14 @@ After all tasks:
 
 ## Step 1: Load Plan and Establish Recovery State
 
-1. Read plan file once
+1. Load plan via `get_plan` (brain-mcp tool) using the `plan://` URL. If given a file path instead, read the file — but plans should be stored in the graph.
 2. Extract ALL tasks with full text and context
 3. Create TodoWrite with all tasks
 4. Note any cross-task dependencies
 5. **Record base SHA**: `git rev-parse HEAD` — this is the recovery checkpoint
 6. **Check for prior progress**: If resuming after a session interruption, check TodoWrite state and git log to identify which tasks already completed. Skip completed tasks.
 
-**Recovery detection:** If the plan file exists and TodoWrite has tasks marked complete, this is a resumed session. Verify completed tasks by checking git log for their commits, then continue from the first incomplete task.
+**Recovery detection:** If the plan exists (via `get_plan`) and TodoWrite has tasks marked complete, this is a resumed session. Verify completed tasks by checking git log for their commits, then continue from the first incomplete task. Update task statuses in the plan via `update_plan` as work progresses.
 
 ## Step 2: Per-Task Cycle
 
@@ -165,7 +165,7 @@ When receiving review feedback from any source:
 ## When NOT to Use
 
 - Tasks are tightly coupled and can't be understood independently
-- No written plan exists (use brainstorming → writing-plans first)
+- No written plan exists (use brainstorming → writing-plans first to create a `plan://` node)
 - Single small task (just do it directly)
 - Exploratory debugging (use systematic-debugging instead)
 
